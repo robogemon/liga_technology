@@ -60,8 +60,8 @@ all: main-build
 main-build: ftc_probe.elf secondary-outputs
 
 # Tool invocations
-ftc_probe.elf ftc_probe.map: $(OBJS) $(USER_OBJS) C:\Users\emilg\Documents\ftc_probe\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ftc_probe.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\emilg\Documents\ftc_probe\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ftc_probe.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ftc_probe.elf ftc_probe.map: $(OBJS) $(USER_OBJS) C:\Users\emilg\Desktop\ftc_pribik\liga_technology\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "ftc_probe.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\emilg\Desktop\ftc_pribik\liga_technology\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ftc_probe.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
