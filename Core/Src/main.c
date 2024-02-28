@@ -67,10 +67,10 @@ float robot_matrix[3][4] = {
 	{0.32,-0.32,-0.32,0.32}
 };
 float axes_robot_matrix_inverse[4][3] = {
-	{0.25,-0.25,0.73242},
-	{0.25,0.25,-0.73242},
-	{0.25,-0.25,-0.73242},
-	{0.25,0.25,0.73242}
+	{0.25,-0.25,0.78125},
+	{0.25,0.25,-0.78125},
+	{0.25,-0.25,-0.78125},
+	{0.25,0.25,0.78125}
 };
 float target_speed[3] = {
 		0.0,0.0,0.0
@@ -95,7 +95,7 @@ float gipotinus;
 float V = 0.05;
 float W = 0.1;
 float quest_FI;
-float mot_grab = 0.3;
+float mot_grab = 0.5;
 float distante;
 uint8_t znamya_position;
 uint8_t position = 0;
@@ -280,6 +280,7 @@ void switch_lim(uint8_t position){
 		}
 		break;
 		case (3):
+				position = 2;
 			while (switch_c.up_switch != 1){
 				check_switches();
 				position = 2;
@@ -301,18 +302,43 @@ void Move_robot_coordinates_X_Y_W(float speed_v,float speed_w,float x_target,flo
 	quest_xy[0][1] = y_target;
 	quest_FI = fi_target;
 	convert_xy_UV[0][0]=cos(fi);
-	    convert_xy_UV[0][1]=sin(fi);
-		convert_xy_UV[0][2]=0;
-		convert_xy_UV[1][0]=-sin(fi);
-		convert_xy_UV[1][1]=cos(fi);
-		convert_xy_UV[1][2]=0;
-		convert_xy_UV[2][0]=position_x;
-		convert_xy_UV[2][1]=position_y;
-		convert_xy_UV[2][2]=1;
-		matrixInverse(&convert_xy_UV[0][0],3,&inverse_converte_xy_UV[0][0]);
-		matrixMultiplyM2M(&quest_xy[0][0],1,3,&inverse_converte_xy_UV[0][0],3,3,&quest_UV[0][0]);
-		gipotinus =  sqrtf((quest_UV[0][0]*quest_UV[0][0])+(quest_UV[0][1]*quest_UV[0][1]) );
-		distante = gipotinus;
+	convert_xy_UV[0][1]=sin(fi);
+	convert_xy_UV[0][2]=0;
+	convert_xy_UV[1][0]=-sin(fi);
+	convert_xy_UV[1][1]=cos(fi);
+	convert_xy_UV[1][2]=0;
+	convert_xy_UV[2][0]=position_x;
+	convert_xy_UV[2][1]=position_y;
+	convert_xy_UV[2][2]=1;
+	matrixInverse(&convert_xy_UV[0][0],3,&inverse_converte_xy_UV[0][0]);
+	matrixMultiplyM2M(&quest_xy[0][0],1,3,&inverse_converte_xy_UV[0][0],3,3,&quest_UV[0][0]);
+	gipotinus =  sqrtf((quest_UV[0][0]*quest_UV[0][0])+(quest_UV[0][1]*quest_UV[0][1]) );
+	distante = gipotinus;
+	 if(fi>=(2*pi)) fi = fi-2*pi;
+	 if(fi<0.0)	 fi = fi+2*pi;
+	 if(quest_FI>fi){
+		 if((quest_FI-fi)>pi){
+			delta_fi = (2*pi-quest_FI+fi);
+			flaging = 1;
+		 }
+		 else {
+
+			 delta_fi = (quest_FI - fi);
+			 flaging = 2;
+		 }
+
+	 }
+	 else{
+		 if((fi-quest_FI)>pi){
+			 flaging = 3;
+			delta_fi =  2*pi-fi+quest_FI;;
+
+		 }
+		 else {
+			 flaging = 4;
+			 delta_fi = fi-quest_FI;
+		 }
+	 }
 	while(((gipotinus>=0.005)||delta_fi>=0.02)){
 	convert_xy_UV[0][0]=cos(fi);
     convert_xy_UV[0][1]=sin(fi);
@@ -327,9 +353,15 @@ void Move_robot_coordinates_X_Y_W(float speed_v,float speed_w,float x_target,flo
 	matrixMultiplyM2M(&quest_xy[0][0],1,3,&inverse_converte_xy_UV[0][0],3,3,&quest_UV[0][0]);
 	gipotinus =  sqrtf((quest_UV[0][0]*quest_UV[0][0])+(quest_UV[0][1]*quest_UV[0][1]) );
 	if (gipotinus > 0.005){
-		if ((gipotinus < 0.05)||((distante-gipotinus)<0.05)){
-			target_speed[0] = quest_UV[0][0]/gipotinus*V*0.5;
-			target_speed[1] = quest_UV[0][1]/gipotinus*V*0.5;
+		if (gipotinus < 0.15){
+			target_speed[0] = quest_UV[0][0]/gipotinus*V*(0.4+(0.6*gipotinus)/0.25);
+			target_speed[1] = quest_UV[0][1]/gipotinus*V*(0.4+(0.6*gipotinus)/0.25);
+		}
+		else if(distante-gipotinus<0.15){
+
+			target_speed[0] = quest_UV[0][0]/gipotinus*V*(0.4+(0.6*(distante-gipotinus))/0.25);
+			target_speed[1] = quest_UV[0][1]/gipotinus*V*(0.4+(0.6*(distante-gipotinus))/0.25);
+
 		}
 		else{
 			target_speed[0] = quest_UV[0][0]/gipotinus*V;
@@ -340,16 +372,16 @@ void Move_robot_coordinates_X_Y_W(float speed_v,float speed_w,float x_target,flo
 		target_speed[0] = 0.0;
 		target_speed[1] = 0.0;
 	}
-	if(fi>=(2*pi))
-		  		  fi = fi-2*pi;
-		  	  if(fi<0.0)
-		  		  fi = fi+2*pi;
-		  	if (delta_fi>0.2){
+	if(fi>=(2*pi))fi = fi-2*pi;
+
+		  	  if(fi<0.0) fi = fi+2*pi;
+
+		  	if (delta_fi>0.02){
 		  		switch(flaging){
-		  			case(1):target_speed[2] = -W;
-		  			case(2):target_speed[2] = W;
-		  			case(3):target_speed[2] = W;
-		  			case(4):target_speed[2] = -W;
+		  			case(1):target_speed[2] = W;
+		  			case(2):target_speed[2] = -W;
+		  			case(3):target_speed[2] = -W;
+		  			case(4):target_speed[2] = W;
 		  		}
 
 		  		  }
@@ -542,7 +574,7 @@ void convert_typedef(void){
 	Wheel_4.wh_L = 0.0;
 }
 void control_mod (void){
-	if(1){
+	if(!autonom_flag){
 	convert_chushpan();
 	  enum {
 		  A_BUTTON, B_BUTTON, X_BUTTON, Y_BUTTON, LB_BUTTON, RB_BUTTON,
@@ -575,26 +607,33 @@ void control_mod (void){
 
 	  if(pads[0].buttons[A_BUTTON]){
 		  servo_control(1,1);
+		  chain_control(position);
 	  }
 	  if(pads[0].buttons[B_BUTTON]){
 		  servo_control(1,0);
+		  chain_control(position);
 	  }
 	  if(pads[0].buttons[X_BUTTON]){
 		  servo_control(0,1);
+		  chain_control(position);
 	  }
 	  if(pads[0].buttons[Y_BUTTON]){
 		  servo_control(0,0);
+		  chain_control(position);
 	  }
 	  if(pads[0].buttons[LB_BUTTON]){
 		  position = 0;
+		  chain_control(position);
 	  }
 	  if(pads[0].buttons[LT_BUTTON]){
 		  position = 1;
+		  chain_control(position);
 	  }
 	  if(pads[0].buttons[RB_BUTTON]){
 		  position = 2;
+		  chain_control(position);
 	  }
-	  chain_control(position);
+
 	}
 }
 void set_voltage(uint8_t motor , float duty) {
@@ -850,7 +889,7 @@ for (i = 0; i < n; i++)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	convert_typedef();
+			convert_typedef();
 
 
 
@@ -915,22 +954,22 @@ int main(void)
 
 
 
+
   ////////////////////
 
-  position = 0;
 
-  switch_lim(1);
-  servo_control(0,0);
-  servo_control(1,0);
-  HAL_Delay(500);
-  servo_control(0 , 1);
-  switch_lim(2);
-  Move_robot_coordinates_X_Y_W(0.2,0.4,0.0,0.5,0.0);
-  servo_control(0,1);
-  switch_lim(3);
-  HAL_Delay(200);
-  servo_control(1,1);
-  servo_control(0,0);
+
+  //Move_robot_coordinates_X_Y_W(0.2,1,0.0,2.16,0.0);
+
+  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.06,0.1,0.0);
+  Move_robot_coordinates_X_Y_W(0.35,0.75,-0.06,2.16,3.38);
+
+/*  Move_robot_coordinates_X_Y_W(0.20,1,-0.03,2.03,5.5);
+  Move_robot_coordinates_X_Y_W(0.20,0.45,-1.06,0.58,5.5);*/
+
+
+
+
 
 
 
@@ -950,52 +989,82 @@ int main(void)
   }*/
 
 /////////////////
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-
-  }
-//	  convert_chushpan();
-//	  check_switches();
-//	  omron(0);
-//
-//
 //	  if(autonom_flag){
-//		  position_x = 0.0;
-//		  position_y = 0.0;
-//		  fi = 0.000001;
-//		  convert_chushpan();
-//		  check_switches();
-//		  omron(0);
-//		  Move_robot_coordinates_X_Y_W(0.2,0.4,0.0,3.0,0.0);
-//		  servo_control(0 , 1);
-//		  servo_control(1 , 0);
-//		  HAL_Delay(200);
-//		  switch_lim(2);
-//		  Move_robot_coordinates_X_Y_W(0.2,0.4,0.0,1,3.0);
-//		  servo_control(1 , 1);
-//		  HAL_Delay(500);
-//		  switch_lim(3);
-//		  HAL_Delay(500);
-//		  servo_control(0 , 0);
-//		  while(autonom_flag && HAL_GetTick() - autonom_timer < 30000){
-//			  convert_chushpan();
-//			  Wheel_1.target = 0;
-//				Wheel_2.target = 0;
-//				Wheel_3.target = 0;
-//				Wheel_4.target = 0;
-//		  }
+//	  convert_chushpan();
+//  	  omron(1);
+////  	  position = 0;
+////  	  switch_lim(1);
+////  	  servo_control(0,0);
+//  	  servo_control(1,0);
+////  	  HAL_Delay(500);
+////  	  servo_control(0 , 1);
+////  	  HAL_Delay(300);
+////  	  switch_lim(2);
+//  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.06,0.9,0.0);
+//  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.22,2.03,3.3);
+//  	  HAL_Delay(300);
+//  	  servo_control(1,1);
+////  	  switch_lim(3);
+////  	  HAL_Delay(500);
+////  	  servo_control(0,0);
+//  	  fi = 3.14;
+//  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.22,2.03,3.93);
+//  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-1.22,0.35,5.7);
+//  	  servo_control(1,0);
+//  	  switch(znamya_position){
+//  	  case (1):
+//  	        Move_robot_coordinates_X_Y_W(0.4,0.3,-1.4,1.76,6.28);
+//  	        break;
 //
-//
-//
-//
-//		 }
-//	  control_mod();
+//  	  case(2):
+//  			Move_robot_coordinates_X_Y_W(0.25,0.7,-0.22,1.53,3.3);
+//  	  	  	break;
+//  	  case(3):
+//  			  Move_robot_coordinates_X_Y_W(0.3,0.5,-1.22,0.85,6.28);
+//  	  	  	  break;
+//  	  }
+//  		  while(autonom_flag ){
+//  			  convert_chushpan();
+//  			  Wheel_1.target = 0;
+//  			  Wheel_2.target = 0;
+//  			  Wheel_3.target = 0;
+//  			  Wheel_4.target = 0;
+//  			  	  }
 //	  }
+//	  control_mod();
+//
+//
+//
+////  check_switches();
+////  omron(0);
+////
+//
+//  if(autonom_flag){
+//
+//
+//	  while(autonom_flag && HAL_GetTick() - autonom_timer < 30000){
+//		  convert_chushpan();
+//		  Wheel_1.target = 0;
+//		  Wheel_2.target = 0;
+//		  Wheel_3.target = 0;
+//		  Wheel_4.target = 0;
+//		  	  }
+//
+//
+//
+//  	  }
+//   control_mod();
+//  }
+
+//		  }
 //
 //
 
@@ -1017,6 +1086,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
   /* USER CODE END 3 */
+}
 }
 
 /**
