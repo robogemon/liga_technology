@@ -230,15 +230,15 @@ void servo_control(uint8_t servo ,uint8_t position ){ /*position = 0 open , posi
 			 TIM9->CCR1 = 30 +0.5*90;
 		 }
 		 else{
-			 TIM9->CCR1 = 30 +0.5*43;//43
+			 TIM9->CCR1 = 30 +0.5*43;
 		 }
 		 break;
 	 case 1:
 		 if(position == 0){
-			 TIM9->CCR2 = 30 +0.5*90;
+			 TIM9->CCR2 = 30 +0.5*120;
 		 }
 		 else{
-			 TIM9->CCR2 = 30 +0.5*38;//38
+			 TIM9->CCR2 = 30 +0.5*30;
 		 }
 		 break;
 	 }
@@ -254,8 +254,8 @@ void chain(float duty){
 		 }
 
 }
-void switch_lim(uint8_t position){
-	switch(position){
+void switch_lim(uint8_t pos){
+	switch(pos){
 		case (1):
 			while (switch_c.down_switch != 1){
 				check_switches();
@@ -283,7 +283,7 @@ void switch_lim(uint8_t position){
 				position = 2;
 			while (switch_c.up_switch != 1){
 				check_switches();
-				position = 2;
+				pos = 2;
 				chain_control(2);
 				Wheel_1.target = 0;
 				Wheel_2.target = 0;
@@ -575,6 +575,7 @@ void convert_typedef(void){
 }
 void control_mod (void){
 	if(!autonom_flag){
+		check_switches();
 	convert_chushpan();
 	  enum {
 		  A_BUTTON, B_BUTTON, X_BUTTON, Y_BUTTON, LB_BUTTON, RB_BUTTON,
@@ -607,19 +608,19 @@ void control_mod (void){
 
 	  if(pads[0].buttons[A_BUTTON]){
 		  servo_control(1,1);
-		  chain_control(position);
+
 	  }
 	  if(pads[0].buttons[B_BUTTON]){
 		  servo_control(1,0);
-		  chain_control(position);
+
 	  }
 	  if(pads[0].buttons[X_BUTTON]){
 		  servo_control(0,1);
-		  chain_control(position);
+
 	  }
 	  if(pads[0].buttons[Y_BUTTON]){
 		  servo_control(0,0);
-		  chain_control(position);
+
 	  }
 	  if(pads[0].buttons[LB_BUTTON]){
 		  position = 0;
@@ -633,7 +634,7 @@ void control_mod (void){
 		  position = 2;
 		  chain_control(position);
 	  }
-
+	  chain_control(position);
 	}
 }
 void set_voltage(uint8_t motor , float duty) {
@@ -954,39 +955,8 @@ int main(void)
 
 
 
-
   ////////////////////
 
-
-
-  //Move_robot_coordinates_X_Y_W(0.2,1,0.0,2.16,0.0);
-
-  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.06,0.1,0.0);
-  Move_robot_coordinates_X_Y_W(0.35,0.75,-0.06,2.16,3.38);
-
-/*  Move_robot_coordinates_X_Y_W(0.20,1,-0.03,2.03,5.5);
-  Move_robot_coordinates_X_Y_W(0.20,0.45,-1.06,0.58,5.5);*/
-
-
-
-
-
-
-
-/*  HAL_Delay(100);
-  switch_lim(2);
-  servo_control(0 , 1);
-  HAL_Delay(200);
-  switch_lim(3);
-  HAL_Delay(500);
-  servo_control(0 , 0);*/
- /* while(autonom_flag && HAL_GetTick() - autonom_timer < 30000){
-	  convert_chushpan();
-	  Wheel_1.target = 0;
-	  Wheel_2.target = 0;
-	  Wheel_3.target = 0;
-	  Wheel_4.target = 0;
-  }*/
 
 /////////////////
 
@@ -997,83 +967,61 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  if(autonom_flag){
-//	  convert_chushpan();
-//  	  omron(1);
-////  	  position = 0;
-////  	  switch_lim(1);
-////  	  servo_control(0,0);
-//  	  servo_control(1,0);
-////  	  HAL_Delay(500);
-////  	  servo_control(0 , 1);
-////  	  HAL_Delay(300);
-////  	  switch_lim(2);
-//  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.06,0.9,0.0);
-//  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.22,2.03,3.3);
-//  	  HAL_Delay(300);
-//  	  servo_control(1,1);
-////  	  switch_lim(3);
-////  	  HAL_Delay(500);
-////  	  servo_control(0,0);
-//  	  fi = 3.14;
-//  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.22,2.03,3.93);
-//  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-1.22,0.35,5.7);
-//  	  servo_control(1,0);
-//  	  switch(znamya_position){
-//  	  case (1):
-//  	        Move_robot_coordinates_X_Y_W(0.4,0.3,-1.4,1.76,6.28);
-//  	        break;
-//
-//  	  case(2):
-//  			Move_robot_coordinates_X_Y_W(0.25,0.7,-0.22,1.53,3.3);
-//  	  	  	break;
-//  	  case(3):
-//  			  Move_robot_coordinates_X_Y_W(0.3,0.5,-1.22,0.85,6.28);
-//  	  	  	  break;
-//  	  }
-//  		  while(autonom_flag ){
-//  			  convert_chushpan();
-//  			  Wheel_1.target = 0;
-//  			  Wheel_2.target = 0;
-//  			  Wheel_3.target = 0;
-//  			  Wheel_4.target = 0;
-//  			  	  }
-//	  }
-//	  control_mod();
-//
-//
-//
-////  check_switches();
-////  omron(0);
-////
-//
-//  if(autonom_flag){
-//
-//
-//	  while(autonom_flag && HAL_GetTick() - autonom_timer < 30000){
-//		  convert_chushpan();
-//		  Wheel_1.target = 0;
-//		  Wheel_2.target = 0;
-//		  Wheel_3.target = 0;
-//		  Wheel_4.target = 0;
-//		  	  }
-//
-//
-//
-//  	  }
-//   control_mod();
-//  }
 
-//		  }
-//
-//
+	  if(autonom_flag){
+	  convert_chushpan();
+	  omron(1);
+	  	  position = 0;
+	  	  //switch_lim(1);
+	  	  servo_control(0,0);
+	  	  servo_control(1,0);
+	  	  HAL_Delay(500);
+	  	  servo_control(0 , 1);
+	  	  HAL_Delay(300);
+	  	  switch_lim(2);
+	  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.06,0.9,0.0);
+	  	  Move_robot_coordinates_X_Y_W(0.25,0.7,0.03,2.1,3.3);
+	  	  HAL_Delay(300);
+	  	  servo_control(1,1);
+	  	  fi = 3.14;
+	  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-0.22,2.03,3.93);
+	  	  Move_robot_coordinates_X_Y_W(0.25,0.7,-1.22,0.35,5.7);
+	  	  servo_control(1,0);
+	  	  switch_lim(3);
+	  	  HAL_Delay(250);
+	  	  servo_control(0,0);
 
-/*
+	  	  switch(znamya_position){
+	  	  case (1):
+	  	   Move_robot_coordinates_X_Y_W(0.35,0.2,-1.4,1.66,6.28);
 
-	  if(autonom_flag && HAL_GetTick() - autonom_timer < 30000){
+	  	        break;
 
+	  	  case(2):
+	  		  Move_robot_coordinates_X_Y_W(0.35,0.3,-0.22,1.13,5.7);
+
+
+	  	  	  	break;
+	  	  case(3):
+	  	  	  	  break;
+	  	  }
+
+  	  }
+  		  while(autonom_flag ){
+  			  convert_chushpan();
+  			  Wheel_1.target = 0;
+  			  Wheel_2.target = 0;
+  			  Wheel_3.target = 0;
+  			  Wheel_4.target = 0;
+  			  	  }
+
+  		control_mod();
 	  }
-*/
+
+
+
+
+
 
 
 
@@ -1087,7 +1035,7 @@ int main(void)
 
   /* USER CODE END 3 */
 }
-}
+
 
 /**
   * @brief System Clock Configuration
