@@ -16,18 +16,6 @@ C_SRCS += \
 ../Core/Src/tim.c \
 ../Core/Src/usart.c 
 
-OBJS += \
-./Core/Src/dma.o \
-./Core/Src/gpio.o \
-./Core/Src/main.o \
-./Core/Src/stm32f4xx_hal_msp.o \
-./Core/Src/stm32f4xx_it.o \
-./Core/Src/syscalls.o \
-./Core/Src/sysmem.o \
-./Core/Src/system_stm32f4xx.o \
-./Core/Src/tim.o \
-./Core/Src/usart.o 
-
 C_DEPS += \
 ./Core/Src/dma.d \
 ./Core/Src/gpio.d \
@@ -39,6 +27,18 @@ C_DEPS += \
 ./Core/Src/system_stm32f4xx.d \
 ./Core/Src/tim.d \
 ./Core/Src/usart.d 
+
+OBJS += \
+./Core/Src/dma.o \
+./Core/Src/gpio.o \
+./Core/Src/main.o \
+./Core/Src/stm32f4xx_hal_msp.o \
+./Core/Src/stm32f4xx_it.o \
+./Core/Src/syscalls.o \
+./Core/Src/sysmem.o \
+./Core/Src/system_stm32f4xx.o \
+./Core/Src/tim.o \
+./Core/Src/usart.o 
 
 
 # Each subdirectory must supply rules for building sources it contributes
