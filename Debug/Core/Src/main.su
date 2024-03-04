@@ -25,5 +25,5 @@
 ../Core/Src/main.c:824:6:matrixInverse	216	static
 ../Core/Src/main.c:845:6:matrixDet_LU_Transform	72	static
 ../Core/Src/main.c:890:5:main	8	static
-../Core/Src/main.c:1044:6:SystemClock_Config	88	static
-../Core/Src/main.c:1094:6:Error_Handler	4	static,ignoring_inline_asm
+../Core/Src/main.c:1045:6:SystemClock_Config	88	static
+../Core/Src/main.c:1095:6:Error_Handler	4	static,ignoring_inline_asm
