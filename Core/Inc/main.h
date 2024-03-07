@@ -41,6 +41,11 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+extern float speed_uv;
+extern float speed_fi;
+extern float coords_x;
+extern float coords_y;
+extern float coords_fi;
 extern float fi;
 extern float delta_fi;
 extern float delta_x;
@@ -49,21 +54,19 @@ extern float result_speed_0;
 extern float result_speed_1;
 extern float result_speed_2;
 extern float result_speed_3;
+extern float result_speed_grab;
 extern float speed_U;
 extern float speed_V;
 extern float speed_W;
 extern float position_x;
 extern float position_y;
 extern float quest_FI;
+extern float metr_chain;
 extern int16_t Enc_Counter_0;
 extern int16_t Enc_Counter_1;
 extern int16_t Enc_Counter_2;
 extern int16_t Enc_Counter_3;
-
-extern int16_t Enc_Counter_0_now;
-extern int16_t Enc_Counter_1_now;
-extern int16_t Enc_Counter_2_now;
-extern int16_t Enc_Counter_3_now;
+extern int16_t Enc_Counter_4;
 extern uint8_t flaging;
 extern float UV_convert_xy[2][2];
 extern float delta_UV[1][2];
@@ -91,6 +94,7 @@ extern PID Wheel_1;
 extern PID Wheel_2;
 extern PID Wheel_3;
 extern PID Wheel_4;
+extern PID Chain_motor;
 void delta_FI(uint8_t pol);
 void matrixMultiplyM2M(float *m1, char rows1, char columns1, float *m2, char rows2, char columns2, float *new_m);
 void Move_robot_coordinates_X_Y(float speed,float x_target,float y_target);
@@ -119,12 +123,16 @@ void matrixDet_LU_Transform(float *A, char n,float *out);
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define radius 0.03
+#define radius 0.03 //wheel
 #define pulse_enc 2236
 #define pi 3.1415926535897932
-#define pi_Radius 0.188495559215387592
-#define pi_Radius_pulse_enc 0.00008430033954176547
+#define pi_Radius 0.188495559215387592 //wheel
+#define pi_Radius_pulse_enc 0.00008430033954176547 //wheel
+#define radius_chain 0.052 //chain
+#define pi_Radius_chain 0.3267256359733384928 //chain
+#define pi_Radius_pulse_enc_chain 0.0001461205885390601488 //chain
 /* USER CODE END EM */
+
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
@@ -212,8 +220,8 @@ void Error_Handler(void);
 #define I2S3_SD_GPIO_Port GPIOC
 #define limit_switch_1_Pin GPIO_PIN_0
 #define limit_switch_1_GPIO_Port GPIOD
-#define limit_switch_2_Pin GPIO_PIN_1
-#define limit_switch_2_GPIO_Port GPIOD
+#define mosfet_enable_Pin GPIO_PIN_1
+#define mosfet_enable_GPIO_Port GPIOD
 #define limit_switch_3_Pin GPIO_PIN_2
 #define limit_switch_3_GPIO_Port GPIOD
 #define omron_1_Pin GPIO_PIN_3

@@ -46,15 +46,15 @@ int16_t Enc_Counter_0 = 0;
 int16_t Enc_Counter_1 = 0;
 int16_t Enc_Counter_2 = 0;
 int16_t Enc_Counter_3 = 0;
-int16_t Enc_Counter_0_now = 0;
-int16_t Enc_Counter_1_now = 0;
-int16_t Enc_Counter_2_now = 0;
-int16_t Enc_Counter_3_now = 0;
+int16_t Enc_Counter_4 = 0;
 uint8_t flaging = 0;
+float metr_chain = 0.0;
+float old_chain = 0.0;
 float result_speed_0 = 0.0;
 float result_speed_1 = 0.0;
 float result_speed_2 = 0.0;
 float result_speed_3 = 0.0;
+float result_speed_grab = 0.0;
 float fi = 0.000001;
 float delta_x;
 float delta_y;
@@ -65,7 +65,11 @@ float delta_UV[1][2];
 float delta_XY[1][2];
 float position_x;
 float position_y;
-
+float speed_uv;
+float speed_fi;
+float coords_x;
+float coords_y;
+float coords_fi;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -81,7 +85,9 @@ float position_y;
 
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim7;
 extern DMA_HandleTypeDef hdma_usart1_rx;
+extern DMA_HandleTypeDef hdma_usart2_rx;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
@@ -226,6 +232,20 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles DMA1 stream5 global interrupt.
+  */
+void DMA1_Stream5_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream5_IRQn 1 */
+}
+
+/**
   * @brief This function handles USART1 global interrupt.
   */
 void USART1_IRQHandler(void)
@@ -247,35 +267,35 @@ void TIM6_DAC_IRQHandler(void)
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
 
 
-	Enc_Counter_0_now = TIM8->CNT;
-	Enc_Counter_1_now = TIM2->CNT;
-	Enc_Counter_2_now = TIM3->CNT;
-	Enc_Counter_3_now = TIM1->CNT;
-
 	 Enc_Counter_0 = TIM8->CNT;
 	 Enc_Counter_1 = TIM2->CNT;
 	 Enc_Counter_2 = TIM3->CNT;
 	 Enc_Counter_3 = TIM1->CNT;
+	 Enc_Counter_4 = TIM5->CNT;
 
 	 result_speed_0 = ((float)Enc_Counter_0) *  pi_Radius_pulse_enc * 100.0;
 	 result_speed_1 = ((float)Enc_Counter_1) *  pi_Radius_pulse_enc * 100.0;
 	 result_speed_2 = ((float)Enc_Counter_2) *  pi_Radius_pulse_enc * 100.0;
 	 result_speed_3 = ((float)Enc_Counter_3) *  pi_Radius_pulse_enc * 100.0;
+	 result_speed_grab = ((float)Enc_Counter_4) * pi_Radius_pulse_enc_chain  * 100.0;
 
 	 TIM8->CNT = 0;
 	 TIM2->CNT = 0;
 	 TIM3->CNT = 0;
 	 TIM1->CNT = 0;
-	 Wheel_1.current = result_speed_0;
-		Wheel_2.current = result_speed_1;
-		Wheel_3.current = result_speed_2;
-		Wheel_4.current = result_speed_3;
+	 TIM5->CNT = 0;
 
+	 Wheel_1.current = result_speed_0;
+	 Wheel_2.current = result_speed_1;
+	 Wheel_3.current = result_speed_2;
+	 Wheel_4.current = result_speed_3;
+	 Chain_motor.current = result_speed_grab;
 
 	 PID_Controller(&Wheel_1);
 	 PID_Controller(&Wheel_2);
 	 PID_Controller(&Wheel_3);
 	 PID_Controller(&Wheel_4);
+	 PID_Controller(&Chain_motor);
 
 	 fi = fi + speed_W * 0.01;
 	 delta_UV[0][0] = speed_U *0.01;
@@ -313,7 +333,9 @@ void TIM6_DAC_IRQHandler(void)
 	 UV_convert_xy[1][1] = cos(fi);
 	 UV_convert_xy[1][0] = -sin(fi);
 
+
 	 matrixMultiplyM2M(&delta_UV[0][0],1,2,&UV_convert_xy[0][0],2,2,&delta_XY[0][0]);
+	 metr_chain = metr_chain + result_speed_grab*0.01 ;
 	 position_x = position_x +  delta_XY[0][0];
 	 position_y = position_y +  delta_XY[0][1];
 
@@ -323,6 +345,20 @@ void TIM6_DAC_IRQHandler(void)
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
 
   /* USER CODE END TIM6_DAC_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM7 global interrupt.
+  */
+void TIM7_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM7_IRQn 0 */
+
+  /* USER CODE END TIM7_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim7);
+  /* USER CODE BEGIN TIM7_IRQn 1 */
+
+  /* USER CODE END TIM7_IRQn 1 */
 }
 
 /**
