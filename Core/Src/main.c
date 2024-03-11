@@ -57,6 +57,7 @@ PID Wheel_3;
 PID Wheel_4;
 PID Chain_motor;
 
+
 float constatnts_test[1][3] = { { 0.1, 0.1, 0.1 }
 
 };
@@ -91,8 +92,12 @@ uint32_t posik = 90;
 uint32_t posik_small = 55;
 uint32_t posik1 = 90;
 uint32_t posik_2 = 10;
-
+uint8_t flag = 0;
+uint8_t flag_onesd = 0;
+uint8_t flag_old = 0;
+uint8_t flag_move_end = 0;
 uint32_t autonom_timer = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -103,12 +108,27 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-set_voltage_chain(float speed , float position){
-	if(speed>1.0) speed = 1.0;
-	if(speed<-1.0) speed = - 1.0;
+void falg_controler(void){
+	if(flag_old != flag){
+		flag_old = flag;
+		flag_onesd = 1;
+		flag_move_end = 0;
+	}
+	if(!((flag_onesd == 0)&&(flag_move_end ==0))){
+		flag++;
+	}
 
-	if(-0.35 != metr_chain )set_voltage(4,speed);
-	if(distance < 0)set_voltage(4,-speed);
+}
+void state_timer(float tim){
+	if(state_flag > tim){
+		flag++;
+		state_flag = 0.0;
+	}
+
+}
+void set_voltage_chain(float position){
+	if(-0.35 != metr_chain )set_voltage(4,mot_grab);
+	if(distante < 0)set_voltage(4,-mot_grab);
 }
 void omron(uint8_t robot_position) { /*robot_position = 0 left , robot_position = 1 right*/
 	if (robot_position == 0) { /*left robot position on place*/
@@ -151,7 +171,7 @@ void chain_control(int pos) {
 	static int flag = -1;
 
 	if (pos == flag) {
-		set_voltage_chain(0.5,);
+		set_voltage_chain(0.5);
 		return;
 	}
 
@@ -263,6 +283,8 @@ void switch_lim(uint8_t pos) {
 	}
 }
 void Move_robot_coordinates_X_Y_W(float speed_v, float speed_w, float x_target,float y_target, float fi_target) {
+	if(flag_move_end == 0 ){
+	if(flag_onesd == 1){
 	V = speed_v;
 	W = speed_w;
 	quest_xy[0][0] = x_target;
@@ -309,93 +331,101 @@ void Move_robot_coordinates_X_Y_W(float speed_v, float speed_w, float x_target,f
 			delta_fi = fi - quest_FI;
 		}
 	}
-	while (((gipotinus >= 0.005) || delta_fi >= 0.02)) {
-		convert_xy_UV[0][0] = cos(fi);
-		convert_xy_UV[0][1] = sin(fi);
-		convert_xy_UV[0][2] = 0;
-		convert_xy_UV[1][0] = -sin(fi);
-		convert_xy_UV[1][1] = cos(fi);
-		convert_xy_UV[1][2] = 0;
-		convert_xy_UV[2][0] = position_x;
-		convert_xy_UV[2][1] = position_y;
-		convert_xy_UV[2][2] = 1;
-		matrixInverse(&convert_xy_UV[0][0], 3, &inverse_converte_xy_UV[0][0]);
-		matrixMultiplyM2M(&quest_xy[0][0], 1, 3, &inverse_converte_xy_UV[0][0],
-				3, 3, &quest_UV[0][0]);
-		gipotinus = sqrtf(
-				(quest_UV[0][0] * quest_UV[0][0])
-						+ (quest_UV[0][1] * quest_UV[0][1]));
-		if (gipotinus > 0.005) {
-			if (gipotinus < 0.15) {
-				target_speed[0] = quest_UV[0][0] / gipotinus * V
-						* (0.4 + (0.6 * gipotinus) / 0.25);
-				target_speed[1] = quest_UV[0][1] / gipotinus * V
-						* (0.4 + (0.6 * gipotinus) / 0.25);
-			} else if (distante - gipotinus < 0.15) {
+	flag_onesd = 0;
+	}
+	else{
+		if (((gipotinus >= 0.005) || delta_fi >= 0.02)) {
+			convert_xy_UV[0][0] = cos(fi);
+			convert_xy_UV[0][1] = sin(fi);
+			convert_xy_UV[0][2] = 0;
+			convert_xy_UV[1][0] = -sin(fi);
+			convert_xy_UV[1][1] = cos(fi);
+			convert_xy_UV[1][2] = 0;
+			convert_xy_UV[2][0] = position_x;
+			convert_xy_UV[2][1] = position_y;
+			convert_xy_UV[2][2] = 1;
+			matrixInverse(&convert_xy_UV[0][0], 3, &inverse_converte_xy_UV[0][0]);
+			matrixMultiplyM2M(&quest_xy[0][0], 1, 3, &inverse_converte_xy_UV[0][0],
+					3, 3, &quest_UV[0][0]);
+			gipotinus = sqrtf(
+					(quest_UV[0][0] * quest_UV[0][0])
+							+ (quest_UV[0][1] * quest_UV[0][1]));
+			if (gipotinus > 0.005) {
+				if (gipotinus < 0.15) {
+					target_speed[0] = quest_UV[0][0] / gipotinus * V
+							* (0.4 + (0.6 * gipotinus) / 0.25);
+					target_speed[1] = quest_UV[0][1] / gipotinus * V
+							* (0.4 + (0.6 * gipotinus) / 0.25);
+				} else if (distante - gipotinus < 0.15) {
 
-				target_speed[0] = quest_UV[0][0] / gipotinus * V
-						* (0.4 + (0.6 * (distante - gipotinus)) / 0.25);
-				target_speed[1] = quest_UV[0][1] / gipotinus * V
-						* (0.4 + (0.6 * (distante - gipotinus)) / 0.25);
+					target_speed[0] = quest_UV[0][0] / gipotinus * V
+							* (0.4 + (0.6 * (distante - gipotinus)) / 0.25);
+					target_speed[1] = quest_UV[0][1] / gipotinus * V
+							* (0.4 + (0.6 * (distante - gipotinus)) / 0.25);
 
+				} else {
+					target_speed[0] = quest_UV[0][0] / gipotinus * V;
+					target_speed[1] = quest_UV[0][1] / gipotinus * V;
+				}
 			} else {
-				target_speed[0] = quest_UV[0][0] / gipotinus * V;
-				target_speed[1] = quest_UV[0][1] / gipotinus * V;
+				target_speed[0] = 0.0;
+				target_speed[1] = 0.0;
 			}
-		} else {
-			target_speed[0] = 0.0;
-			target_speed[1] = 0.0;
+			if (fi >= (2 * pi))
+				fi = fi - 2 * pi;
+
+			if (fi < 0.0)
+				fi = fi + 2 * pi;
+
+			if (delta_fi > 0.02) {
+				switch (flaging) {
+				case (1):
+					target_speed[2] = W;
+				case (2):
+					target_speed[2] = -W;
+				case (3):
+					target_speed[2] = -W;
+				case (4):
+					target_speed[2] = W;
+				}
+
+			} else
+				target_speed[2] = 0.0;
+
+			matrixMultiplyM2M(&target_speed[0], 1, 3, &robot_matrix[0][0], 3, 4,
+					&speed_wheels[0]);
+			now_speead[0] = result_speed_1;
+			now_speead[1] = result_speed_2;
+			now_speead[2] = result_speed_3;
+			read_speed[0] = result_speed_0;
+			read_speed[1] = result_speed_1;
+			read_speed[2] = result_speed_2;
+			read_speed[3] = result_speed_3;
+			matrixMultiplyM2M(&read_speed[0], 1, 4,
+					&axes_robot_matrix_inverse[0][0], 4, 3, &robot_speed[0]);
+
+			Wheel_1.target = speed_wheels[0];
+			Wheel_2.target = speed_wheels[1];
+			Wheel_3.target = speed_wheels[2];
+			Wheel_4.target = speed_wheels[3];
+			speed_U = robot_speed[0];
+			speed_V = robot_speed[1];
+			speed_W = robot_speed[2];
+
 		}
-		if (fi >= (2 * pi))
-			fi = fi - 2 * pi;
-
-		if (fi < 0.0)
-			fi = fi + 2 * pi;
-
-		if (delta_fi > 0.02) {
-			switch (flaging) {
-			case (1):
-				target_speed[2] = W;
-			case (2):
-				target_speed[2] = -W;
-			case (3):
-				target_speed[2] = -W;
-			case (4):
-				target_speed[2] = W;
-			}
-
-		} else
-			target_speed[2] = 0.0;
-
-		matrixMultiplyM2M(&target_speed[0], 1, 3, &robot_matrix[0][0], 3, 4,
-				&speed_wheels[0]);
-		now_speead[0] = result_speed_1;
-		now_speead[1] = result_speed_2;
-		now_speead[2] = result_speed_3;
-		read_speed[0] = result_speed_0;
-		read_speed[1] = result_speed_1;
-		read_speed[2] = result_speed_2;
-		read_speed[3] = result_speed_3;
-		matrixMultiplyM2M(&read_speed[0], 1, 4,
-				&axes_robot_matrix_inverse[0][0], 4, 3, &robot_speed[0]);
-
-		Wheel_1.target = speed_wheels[0];
-		Wheel_2.target = speed_wheels[1];
-		Wheel_3.target = speed_wheels[2];
-		Wheel_4.target = speed_wheels[3];
-		speed_U = robot_speed[0];
-		speed_V = robot_speed[1];
-		speed_W = robot_speed[2];
-
+		else{
+			flag_move_end = 1;
+				speed_U = 0;
+		speed_V = 0;
+		speed_W = 0;
+		Wheel_1.target = 0;
+		Wheel_2.target = 0;
+		Wheel_3.target = 0;
+		Wheel_4.target = 0;
+		}
 	}
 
-	speed_U = 0;
-	speed_V = 0;
-	speed_W = 0;
-	Wheel_1.target = 0;
-	Wheel_2.target = 0;
-	Wheel_3.target = 0;
-	Wheel_4.target = 0;
+	}
 
 }
 typedef struct gamepad {
@@ -964,7 +994,41 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+	switch(flag){
+	case (0):
+		servo_control(0,0);
+		servo_control(0,0);
+		void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+		{
 
+		}
+
+		if (autonom_flag) {
+			flag++;
+		}
+
+	case(1):
+
+			omron(1);
+			servo_control(1,1);
+			state_timer(200);
+
+	case(2):
+		Move_robot_coordinates_X_Y_W(0.25, 0.7, -0.06, 0.9, 0.0);
+	case(3):
+		Move_robot_coordinates_X_Y_W(0.25, 0.7, 0.03, 2.1, 3.3);
+	case(4):
+	case(5):
+	case(6):
+	case(7):
+	case(8):
+	case(9):
+	case(10):
+	case(11):
+	case(12):
+	case(99):
+	}
+	falg_controler();
 
 //		void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //		{

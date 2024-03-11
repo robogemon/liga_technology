@@ -68,9 +68,12 @@ extern int16_t Enc_Counter_2;
 extern int16_t Enc_Counter_3;
 extern int16_t Enc_Counter_4;
 extern uint8_t flaging;
+extern int tim_1;
 extern float UV_convert_xy[2][2];
 extern float delta_UV[1][2];
 extern float delta_XY[1][2];
+extern float state_autonom;
+extern float state_flag;
 typedef struct {
 float P;
 float I;
