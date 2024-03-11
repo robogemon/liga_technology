@@ -70,6 +70,8 @@ float speed_fi;
 float coords_x;
 float coords_y;
 float coords_fi;
+float state_autonom = 0;
+float state_flag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -265,8 +267,8 @@ void USART1_IRQHandler(void)
 void TIM6_DAC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
-
-
+	state_autonom = state_autonom + 0.01;
+	state_flag = state_flag + 0.01;
 	 Enc_Counter_0 = TIM8->CNT;
 	 Enc_Counter_1 = TIM2->CNT;
 	 Enc_Counter_2 = TIM3->CNT;
