@@ -89,7 +89,6 @@ float state_flag = 0;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim7;
 extern DMA_HandleTypeDef hdma_usart1_rx;
-extern DMA_HandleTypeDef hdma_usart2_rx;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
@@ -234,20 +233,6 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles DMA1 stream5 global interrupt.
-  */
-void DMA1_Stream5_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
-
-  /* USER CODE END DMA1_Stream5_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_rx);
-  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
-
-  /* USER CODE END DMA1_Stream5_IRQn 1 */
-}
-
-/**
   * @brief This function handles USART1 global interrupt.
   */
 void USART1_IRQHandler(void)
@@ -298,10 +283,10 @@ void TIM6_DAC_IRQHandler(void)
 	 PID_Controller(&Wheel_3);
 	 PID_Controller(&Wheel_4);
 	 PID_Controller(&Chain_motor);
-
-	 fi = fi + speed_W * 0.01;
 	 delta_UV[0][0] = speed_U *0.01;
 	 delta_UV[0][1] = speed_V *0.01;
+
+	 fi = fi + speed_W * 0.01;
 	 if(fi>=(2*pi)) fi = fi-2*pi;
 	 if(fi<0.0)	 fi = fi+2*pi;
 	 if(quest_FI>fi){

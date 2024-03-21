@@ -136,7 +136,6 @@ void matrixDet_LU_Transform(float *A, char n,float *out);
 #define pi_Radius_pulse_enc_chain 0.0001461205885390601488 //chain
 /* USER CODE END EM */
 
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -147,10 +146,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define dig_pin3_inverse_Pin GPIO_PIN_2
 #define dig_pin3_inverse_GPIO_Port GPIOE
-#define CS_I2C_SPI_Pin GPIO_PIN_3
-#define CS_I2C_SPI_GPIO_Port GPIOE
-#define omron_2_Pin GPIO_PIN_4
-#define omron_2_GPIO_Port GPIOE
 #define servo_2_Pin GPIO_PIN_5
 #define servo_2_GPIO_Port GPIOE
 #define servo_1_Pin GPIO_PIN_6
@@ -159,22 +154,10 @@ void Error_Handler(void);
 #define dig_pin1_GPIO_Port GPIOC
 #define dig_pin2_Pin GPIO_PIN_15
 #define dig_pin2_GPIO_Port GPIOC
-#define PH0_OSC_IN_Pin GPIO_PIN_0
-#define PH0_OSC_IN_GPIO_Port GPIOH
-#define PH1_OSC_OUT_Pin GPIO_PIN_1
-#define PH1_OSC_OUT_GPIO_Port GPIOH
-#define OTG_FS_PowerSwitchOn_Pin GPIO_PIN_0
-#define OTG_FS_PowerSwitchOn_GPIO_Port GPIOC
-#define PDM_OUT_Pin GPIO_PIN_3
-#define PDM_OUT_GPIO_Port GPIOC
 #define ENC_5_A_Pin GPIO_PIN_0
 #define ENC_5_A_GPIO_Port GPIOA
 #define ENC_5_B_Pin GPIO_PIN_1
 #define ENC_5_B_GPIO_Port GPIOA
-#define I2S3_WS_Pin GPIO_PIN_4
-#define I2S3_WS_GPIO_Port GPIOA
-#define SPI1_SCK_Pin GPIO_PIN_5
-#define SPI1_SCK_GPIO_Port GPIOA
 #define ENC_3_A_Pin GPIO_PIN_6
 #define ENC_3_A_GPIO_Port GPIOA
 #define ENC_3_B_Pin GPIO_PIN_7
@@ -195,6 +178,10 @@ void Error_Handler(void);
 #define dig_pin4_GPIO_Port GPIOE
 #define pwm5_MT_Pin GPIO_PIN_14
 #define pwm5_MT_GPIO_Port GPIOB
+#define omron_1_Pin GPIO_PIN_9
+#define omron_1_GPIO_Port GPIOD
+#define omron_2_Pin GPIO_PIN_10
+#define omron_2_GPIO_Port GPIOD
 #define pwm1_MT_Pin GPIO_PIN_12
 #define pwm1_MT_GPIO_Port GPIOD
 #define pwm2_MT_Pin GPIO_PIN_13
@@ -219,24 +206,18 @@ void Error_Handler(void);
 #define SWCLK_GPIO_Port GPIOA
 #define ENC_2_A_Pin GPIO_PIN_15
 #define ENC_2_A_GPIO_Port GPIOA
-#define I2S3_SD_Pin GPIO_PIN_12
-#define I2S3_SD_GPIO_Port GPIOC
 #define limit_switch_1_Pin GPIO_PIN_0
 #define limit_switch_1_GPIO_Port GPIOD
 #define mosfet_enable_Pin GPIO_PIN_1
 #define mosfet_enable_GPIO_Port GPIOD
 #define limit_switch_3_Pin GPIO_PIN_2
 #define limit_switch_3_GPIO_Port GPIOD
-#define omron_1_Pin GPIO_PIN_3
-#define omron_1_GPIO_Port GPIOD
 #define ENC_2_B_Pin GPIO_PIN_3
 #define ENC_2_B_GPIO_Port GPIOB
 #define dig_pin4_inverse_Pin GPIO_PIN_8
 #define dig_pin4_inverse_GPIO_Port GPIOB
 #define dig_pin2_inverse_Pin GPIO_PIN_9
 #define dig_pin2_inverse_GPIO_Port GPIOB
-#define MEMS_INT2_Pin GPIO_PIN_1
-#define MEMS_INT2_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
 
