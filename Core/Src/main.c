@@ -22,6 +22,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
@@ -86,6 +87,11 @@ float W = 0.1;
 float quest_FI;
 float mot_grab = 0.0;
 float distante;
+float mot_1;
+float mot_2;
+float mot_3;
+float mot_4;
+
 uint8_t znamya_position;
 uint8_t position = 0;
 uint32_t posik = 90;
@@ -93,9 +99,10 @@ uint32_t posik_small = 55;
 uint32_t posik1 = 90;
 uint32_t posik_2 = 10;
 uint8_t flag = 0;
-uint8_t flag_onesd = 0;
+bool flag_onesd = 1;
 uint8_t flag_old = 0;
 uint8_t flag_move_end = 0;
+uint8_t flag_compleate = 0;
 uint32_t autonom_timer = 0;
 
 /* USER CODE END PV */
@@ -108,20 +115,25 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 void falg_controler(void){
+	if((!((flag_onesd == 0)&&(flag_move_end ==0)))&&(flag_compleate == 1)){
+		flag++;
+
+	}
+
 	if(flag_old != flag){
 		flag_old = flag;
 		flag_onesd = 1;
 		flag_move_end = 0;
-	}
-	if(!((flag_onesd == 0)&&(flag_move_end ==0))){
-		flag++;
+		flag_compleate = 0;
 	}
 
 }
 void state_timer(float tim){
+
 	if(state_flag > tim){
-		flag++;
+		flag_compleate = 1;
 		state_flag = 0.0;
 	}
 
@@ -306,31 +318,32 @@ void Move_robot_coordinates_X_Y_W(float speed_v, float speed_w, float x_target,f
 			(quest_UV[0][0] * quest_UV[0][0])
 					+ (quest_UV[0][1] * quest_UV[0][1]));
 	distante = gipotinus;
-	if (fi >= (2 * pi))
-		fi = fi - 2 * pi;
-	if (fi < 0.0)
-		fi = fi + 2 * pi;
-	if (quest_FI > fi) {
-		if ((quest_FI - fi) > pi) {
-			delta_fi = (2 * pi - quest_FI + fi);
-			flaging = 1;
-		} else {
+//	if (fi >= (2 * pi))
+//		fi = fi - 2 * pi;
+//	if (fi < 0.0)
+//		fi = fi + 2 * pi;
+//	if (quest_FI > fi) {
+//		if ((quest_FI - fi) > pi) {
+//			delta_fi = (2 * pi - quest_FI + fi);
+//			flaging = 1;
+//		} else {
+//
+//			delta_fi = (quest_FI - fi);
+//			flaging = 2;
+//		}
+//
+//	} else {
+//		if ((fi - quest_FI) > pi) {
+//			flaging = 3;
+//			delta_fi = 2 * pi - fi + quest_FI;
+//			;
+//
+//		} else {
+//			flaging = 4;
+//			delta_fi = fi - quest_FI;
+//		}
+//	}
 
-			delta_fi = (quest_FI - fi);
-			flaging = 2;
-		}
-
-	} else {
-		if ((fi - quest_FI) > pi) {
-			flaging = 3;
-			delta_fi = 2 * pi - fi + quest_FI;
-			;
-
-		} else {
-			flaging = 4;
-			delta_fi = fi - quest_FI;
-		}
-	}
 	flag_onesd = 0;
 	}
 	else{
@@ -371,22 +384,25 @@ void Move_robot_coordinates_X_Y_W(float speed_v, float speed_w, float x_target,f
 				target_speed[0] = 0.0;
 				target_speed[1] = 0.0;
 			}
-			if (fi >= (2 * pi))
-				fi = fi - 2 * pi;
-
-			if (fi < 0.0)
-				fi = fi + 2 * pi;
-
 			if (delta_fi > 0.02) {
 				switch (flaging) {
-				case (1):
+				case (1):{
 					target_speed[2] = W;
-				case (2):
+					break;
+				}
+				case (2):{
 					target_speed[2] = -W;
-				case (3):
+					break;
+				}
+				case (3):{
 					target_speed[2] = -W;
-				case (4):
+					break;
+				}
+
+				case (4):{
 					target_speed[2] = W;
+					break;
+				}
 				}
 
 			} else
@@ -959,7 +975,6 @@ int main(void)
   MX_TIM9_Init();
   MX_TIM12_Init();
   MX_TIM5_Init();
-  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
@@ -977,7 +992,6 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim6);
 
 	HAL_UART_Receive_DMA(&huart1, rx_data, 1);
-	HAL_UART_Receive_DMA(&huart2, rx_data, 2);
 	target_speed[0] = 0;
 	target_speed[1] = 0;
 	target_speed[2] = 0;
@@ -994,8 +1008,16 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+
+//set_voltage(0,mot_1);
+//set_voltage(1,mot_2);
+//set_voltage(2,mot_3);
+//set_voltage(3,mot_4);
+
+
+		autonom_flag = 1;
 	switch(flag){
-	case (0):
+	case (0):{
 		servo_control(0,0);
 		servo_control(0,0);
 		void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -1004,29 +1026,36 @@ int main(void)
 		}
 
 		if (autonom_flag) {
-			flag++;
+			flag_compleate = 1;
 		}
+		break;
+	}
+
 
 	case(1):
+		{
 
 			omron(1);
 			servo_control(1,1);
-			state_timer(200);
+			state_timer(20);
+						break;
 
-	case(2):
-		Move_robot_coordinates_X_Y_W(0.25, 0.7, -0.06, 0.9, 0.0);
-	case(3):
-		Move_robot_coordinates_X_Y_W(0.25, 0.7, 0.03, 2.1, 3.3);
-	case(4):
-	case(5):
-	case(6):
-	case(7):
-	case(8):
-	case(9):
-	case(10):
-	case(11):
-	case(12):
-	case(99):
+	}
+	case(2):{
+				Move_robot_coordinates_X_Y_W(0.2, 0.2, 1, 1, 0.0);
+				flag_compleate = 1;
+				break;
+	}
+
+
+
+	case(3):{
+				Move_robot_coordinates_X_Y_W(0.25, 0.7, 0.03, 2.1, 3.3);
+				flag_compleate = 1;
+				break;
+	}
+
+
 	}
 	falg_controler();
 
