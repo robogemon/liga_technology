@@ -58,7 +58,6 @@ PID Wheel_3;
 PID Wheel_4;
 PID Chain_motor;
 
-
 float constatnts_test[1][3] = { { 0.1, 0.1, 0.1 }
 
 };
@@ -85,7 +84,7 @@ float gipotinus;
 float V = 0.05;
 float W = 0.1;
 float quest_FI;
-float mot_grab = 0.0;
+float mot_grab = 0.75;
 float distante;
 float mot_1;
 float mot_2;
@@ -94,17 +93,14 @@ float mot_4;
 
 uint8_t znamya_position;
 uint8_t position = 0;
-uint32_t posik = 90;
-uint32_t posik_small = 55;
-uint32_t posik1 = 90;
-uint32_t posik_2 = 10;
 uint8_t flag = 0;
 bool flag_onesd = 1;
 uint8_t flag_old = 0;
 uint8_t flag_move_end = 0;
 uint8_t flag_compleate = 0;
 uint32_t autonom_timer = 0;
-
+uint8_t chain_flag_start = 1;
+uint8_t chain_flag_end = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,31 +112,34 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void falg_controler(void){
-	if((!((flag_onesd == 0)&&(flag_move_end ==0)))&&(flag_compleate == 1)){
+void falg_controler(void) {
+	if ((!((flag_onesd == 0) && (flag_move_end == 0))) && (flag_compleate == 1)
+			&& (!((chain_flag_start == 0) && (chain_flag_end == 0)))) {
 		flag++;
 
 	}
 
-	if(flag_old != flag){
+	if (flag_old != flag) {
 		flag_old = flag;
 		flag_onesd = 1;
 		flag_move_end = 0;
 		flag_compleate = 0;
+		chain_flag_start = 1;
+		chain_flag_end = 0;
 	}
 
 }
-void state_timer(float tim){
+void state_timer(float tim) {
 
-	if(state_flag > tim){
+	if (state_flag > tim) {
 		flag_compleate = 1;
 		state_flag = 0.0;
 	}
 
 }
-void set_voltage_chain(float position){
-	if(-0.35 != metr_chain )set_voltage(4,mot_grab);
-	if(distante < 0)set_voltage(4,-mot_grab);
+void set_voltage_chain(float position) {
+	Chain_motor.target = position;
+
 }
 void omron(uint8_t robot_position) { /*robot_position = 0 left , robot_position = 1 right*/
 	if (robot_position == 0) { /*left robot position on place*/
@@ -164,190 +163,140 @@ void omron(uint8_t robot_position) { /*robot_position = 0 left , robot_position 
 
 }
 typedef struct switches {
-	bool mid_switch;
 	bool down_switch;
 	bool up_switch;
 } switches;
 switches switch_c;
 void check_switches() {
-
-	switch_c.mid_switch =
-			(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) == GPIO_PIN_SET) ? 1 : 0;
 	switch_c.down_switch =
 			(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_1) == GPIO_PIN_SET) ? 1 : 0;
 	switch_c.up_switch =
 			(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_SET) ? 1 : 0;
 }
 void chain_control(int pos) {
+	check_switches();
+	static int flig = -1;
+	if (chain_flag_end == 0) {
+		if (chain_flag_start == 1) {
 
-	static int flag = -1;
+			check_switches();
+			chain_flag_start = 0;
 
-	if (pos == flag) {
-		set_voltage_chain(0.5);
-		return;
+		} else {
+
+			if (pos == flig) {
+				set_voltage_chain(0);
+				chain_flag_end = 1;
+				return;
+			}
+			switch (pos) { //0-down, 1-mid, 2-up
+			case (0):
+				if (!switch_c.down_switch) {
+					set_voltage_chain(mot_grab);
+				} else {
+					metr_chain = 0;
+					flig = 0;
+					set_voltage_chain(0);
+				}
+				break;
+
+			case (1):
+				if ((metr_chain + 0.30) <= 0.01
+						&& (metr_chain + 0.30) >= -0.01) {
+					flig = 1;
+					set_voltage_chain(0);
+					metr_chain = 0;
+				} else if ((metr_chain + 0.33) > 0.01) {
+					set_voltage_chain(-mot_grab);
+
+				} else if ((metr_chain + 0.33) < -0.01) {
+					set_voltage_chain(mot_grab);
+				}
+				break;
+
+			case (2):
+				if (!switch_c.up_switch) {
+					set_voltage_chain(-mot_grab);
+				} else {
+					flig = 2;
+
+				}
+			}
+		}
+
 	}
 
+}
+
+void chain_control_control(int pos) {
+	check_switches();
+	static int flig = -1;
+	if (pos == flig) {
+		set_voltage_chain(0);
+		chain_flag_end = 1;
+		return;
+	}
 	switch (pos) { //0-down, 1-mid, 2-up
 	case (0):
 		if (!switch_c.down_switch) {
 			set_voltage_chain(mot_grab);
 		} else {
-			flag = 0;
+			metr_chain = 0;
+			flig = 0;
 			set_voltage_chain(0);
 		}
 		break;
+
 	case (1):
-		if (!switch_c.mid_switch) {
-			if (flag == 0) {
-				set_voltage_chain(-mot_grab);
-			} else {
-				set_voltage_chain(mot_grab);
-			}
-			if (switch_c.up_switch && flag == 0) {
-				flag = 2;
-				set_voltage_chain(mot_grab);
-			}
-			if (switch_c.down_switch && flag == 2) {
-				flag = 0;
-				set_voltage_chain(-mot_grab);
-			}
-		} else {
-			flag = 1;
+		if ((metr_chain + 0.30) <= 0.01 && (metr_chain + 0.30) >= -0.01) {
+			flig = 1;
 			set_voltage_chain(0);
+			metr_chain = 0;
+		} else if ((metr_chain + 0.33) > 0.01) {
+			set_voltage_chain(-mot_grab);
+
+		} else if ((metr_chain + 0.33) < -0.01) {
+			set_voltage_chain(mot_grab);
 		}
 		break;
+
 	case (2):
 		if (!switch_c.up_switch) {
 			set_voltage_chain(-mot_grab);
 		} else {
-			flag = 2;
+			flig = 2;
 
 		}
-
 	}
-
-//
-//	if(switch_c.up_switch){
-//		mot_1 =
-//	}
-//	if(switch_c.down_switch){
-//		set_voltage_chain(mot_1);
-//	}
-//	set_voltage_chain(mot_1);
-
 }
+
 void servo_control(uint8_t servo, uint8_t position) { /*position = 0 open , position = 1 close*/
 	switch (servo) {
 	case 0:
 		if (position == 0) {
 			TIM9->CCR1 = 30 + 0.5 * 90;
 		} else {
-			TIM9->CCR1 = 30 + 0.5 * 43;
+			TIM9->CCR1 = 30 + 0.5 * 65;
 		}
 		break;
 	case 1:
 		if (position == 0) {
-			TIM9->CCR2 = 30 + 0.5 * 120;
+			TIM9->CCR2 = 30 + 0.5 * 90;
 		} else {
-			TIM9->CCR2 = 30 + 0.5 * 30;
+			TIM9->CCR2 = 30 + 0.5 * 180;
 		}
 		break;
 	}
 }
-void switch_lim(uint8_t pos) {
-	switch (pos) {
-	case (1):
-		while (switch_c.down_switch != 1) {
-			check_switches();
-			position = 0;
-			chain_control(0);
-			Wheel_1.target = 0;
-			Wheel_2.target = 0;
-			Wheel_3.target = 0;
-			Wheel_4.target = 0;
-		}
-		break;
-	case (2):
-		while (switch_c.mid_switch != 1) {
-			check_switches();
-			position = 1;
-			chain_control(1);
-			Wheel_1.target = 0;
-			Wheel_2.target = 0;
-			Wheel_3.target = 0;
-			Wheel_4.target = 0;
-
-		}
-		break;
-	case (3):
-		position = 2;
-		while (switch_c.up_switch != 1) {
-			check_switches();
-			pos = 2;
-			chain_control(2);
-			Wheel_1.target = 0;
-			Wheel_2.target = 0;
-			Wheel_3.target = 0;
-			Wheel_4.target = 0;
-		}
-		break;
-
-	}
-}
-void Move_robot_coordinates_X_Y_W(float speed_v, float speed_w, float x_target,float y_target, float fi_target) {
-	if(flag_move_end == 0 ){
-	if(flag_onesd == 1){
-	V = speed_v;
-	W = speed_w;
-	quest_xy[0][0] = x_target;
-	quest_xy[0][1] = y_target;
-	quest_FI = fi_target;
-	convert_xy_UV[0][0] = cos(fi);
-	convert_xy_UV[0][1] = sin(fi);
-	convert_xy_UV[0][2] = 0;
-	convert_xy_UV[1][0] = -sin(fi);
-	convert_xy_UV[1][1] = cos(fi);
-	convert_xy_UV[1][2] = 0;
-	convert_xy_UV[2][0] = position_x;
-	convert_xy_UV[2][1] = position_y;
-	convert_xy_UV[2][2] = 1;
-	matrixInverse(&convert_xy_UV[0][0], 3, &inverse_converte_xy_UV[0][0]);
-	matrixMultiplyM2M(&quest_xy[0][0], 1, 3, &inverse_converte_xy_UV[0][0], 3,
-			3, &quest_UV[0][0]);
-	gipotinus = sqrtf(
-			(quest_UV[0][0] * quest_UV[0][0])
-					+ (quest_UV[0][1] * quest_UV[0][1]));
-	distante = gipotinus;
-//	if (fi >= (2 * pi))
-//		fi = fi - 2 * pi;
-//	if (fi < 0.0)
-//		fi = fi + 2 * pi;
-//	if (quest_FI > fi) {
-//		if ((quest_FI - fi) > pi) {
-//			delta_fi = (2 * pi - quest_FI + fi);
-//			flaging = 1;
-//		} else {
-//
-//			delta_fi = (quest_FI - fi);
-//			flaging = 2;
-//		}
-//
-//	} else {
-//		if ((fi - quest_FI) > pi) {
-//			flaging = 3;
-//			delta_fi = 2 * pi - fi + quest_FI;
-//			;
-//
-//		} else {
-//			flaging = 4;
-//			delta_fi = fi - quest_FI;
-//		}
-//	}
-
-	flag_onesd = 0;
-	}
-	else{
-		if (((gipotinus >= 0.005) || delta_fi >= 0.02)) {
+void Move_robot_coordinates_X_Y_W(float speed_v, float speed_w, float x_target,
+		float y_target, float fi_target) {
+	if (flag_move_end == 0) {
+		if (flag_onesd == 1) {
+			V = speed_v;
+			W = speed_w;
+			quest_xy[0][0] = x_target;
+			quest_xy[0][1] = y_target;
+			quest_FI = fi_target;
 			convert_xy_UV[0][0] = cos(fi);
 			convert_xy_UV[0][1] = sin(fi);
 			convert_xy_UV[0][2] = 0;
@@ -357,89 +306,136 @@ void Move_robot_coordinates_X_Y_W(float speed_v, float speed_w, float x_target,f
 			convert_xy_UV[2][0] = position_x;
 			convert_xy_UV[2][1] = position_y;
 			convert_xy_UV[2][2] = 1;
-			matrixInverse(&convert_xy_UV[0][0], 3, &inverse_converte_xy_UV[0][0]);
-			matrixMultiplyM2M(&quest_xy[0][0], 1, 3, &inverse_converte_xy_UV[0][0],
-					3, 3, &quest_UV[0][0]);
+			matrixInverse(&convert_xy_UV[0][0], 3,
+					&inverse_converte_xy_UV[0][0]);
+			matrixMultiplyM2M(&quest_xy[0][0], 1, 3,
+					&inverse_converte_xy_UV[0][0], 3, 3, &quest_UV[0][0]);
 			gipotinus = sqrtf(
 					(quest_UV[0][0] * quest_UV[0][0])
 							+ (quest_UV[0][1] * quest_UV[0][1]));
-			if (gipotinus > 0.005) {
-				if (gipotinus < 0.15) {
-					target_speed[0] = quest_UV[0][0] / gipotinus * V
-							* (0.4 + (0.6 * gipotinus) / 0.25);
-					target_speed[1] = quest_UV[0][1] / gipotinus * V
-							* (0.4 + (0.6 * gipotinus) / 0.25);
-				} else if (distante - gipotinus < 0.15) {
+			distante = gipotinus;
+			if (fi >= (2 * pi))
+				fi = fi - 2 * pi;
+			if (fi < 0.0)
+				fi = fi + 2 * pi;
+			if (quest_FI > fi) {
+				if ((quest_FI - fi) > pi) {
+					delta_fi = (2 * pi - quest_FI + fi);
+					flaging = 1;
+				} else {
 
-					target_speed[0] = quest_UV[0][0] / gipotinus * V
-							* (0.4 + (0.6 * (distante - gipotinus)) / 0.25);
-					target_speed[1] = quest_UV[0][1] / gipotinus * V
-							* (0.4 + (0.6 * (distante - gipotinus)) / 0.25);
+					delta_fi = (quest_FI - fi);
+					flaging = 2;
+				}
+
+			} else {
+				if ((fi - quest_FI) > pi) {
+					flaging = 3;
+					delta_fi = 2 * pi - fi + quest_FI;
+					;
 
 				} else {
-					target_speed[0] = quest_UV[0][0] / gipotinus * V;
-					target_speed[1] = quest_UV[0][1] / gipotinus * V;
+					flaging = 4;
+					delta_fi = fi - quest_FI;
 				}
-			} else {
-				target_speed[0] = 0.0;
-				target_speed[1] = 0.0;
 			}
-			if (delta_fi > 0.02) {
-				switch (flaging) {
-				case (1):{
-					target_speed[2] = W;
-					break;
-				}
-				case (2):{
-					target_speed[2] = -W;
-					break;
-				}
-				case (3):{
-					target_speed[2] = -W;
-					break;
-				}
 
-				case (4):{
-					target_speed[2] = W;
-					break;
+			flag_onesd = 0;
+		} else {
+			if (((gipotinus >= 0.01) || delta_fi >= 0.02)) {
+				convert_xy_UV[0][0] = cos(fi);
+				convert_xy_UV[0][1] = sin(fi);
+				convert_xy_UV[0][2] = 0;
+				convert_xy_UV[1][0] = -sin(fi);
+				convert_xy_UV[1][1] = cos(fi);
+				convert_xy_UV[1][2] = 0;
+				convert_xy_UV[2][0] = position_x;
+				convert_xy_UV[2][1] = position_y;
+				convert_xy_UV[2][2] = 1;
+				matrixInverse(&convert_xy_UV[0][0], 3,
+						&inverse_converte_xy_UV[0][0]);
+				matrixMultiplyM2M(&quest_xy[0][0], 1, 3,
+						&inverse_converte_xy_UV[0][0], 3, 3, &quest_UV[0][0]);
+				gipotinus = sqrtf(
+						(quest_UV[0][0] * quest_UV[0][0])
+								+ (quest_UV[0][1] * quest_UV[0][1]));
+				if (gipotinus > 0.005) {
+					if (gipotinus < 0.15) {
+						target_speed[0] = quest_UV[0][0] / gipotinus * V
+								* (0.4 + (0.6 * gipotinus) / 0.25);
+						target_speed[1] = quest_UV[0][1] / gipotinus * V
+								* (0.4 + (0.6 * gipotinus) / 0.25);
+					} else if (distante - gipotinus < 0.15) {
+
+						target_speed[0] = quest_UV[0][0] / gipotinus * V
+								* (0.4 + (0.6 * (distante - gipotinus)) / 0.25);
+						target_speed[1] = quest_UV[0][1] / gipotinus * V
+								* (0.4 + (0.6 * (distante - gipotinus)) / 0.25);
+
+					} else {
+						target_speed[0] = quest_UV[0][0] / gipotinus * V;
+						target_speed[1] = quest_UV[0][1] / gipotinus * V;
+					}
+				} else {
+					target_speed[0] = 0.0;
+					target_speed[1] = 0.0;
 				}
-				}
+				if (delta_fi > 0.02) {
+					switch (flaging) {
+					case (1): {
+						target_speed[2] = -W;
+						break;
+					}
+					case (2): {
+						target_speed[2] = W;
+						break;
+					}
+					case (3): {
+						target_speed[2] = W;
+						break;
+					}
 
-			} else
-				target_speed[2] = 0.0;
+					case (4): {
+						target_speed[2] = -W;
+						break;
+					}
+					}
 
-			matrixMultiplyM2M(&target_speed[0], 1, 3, &robot_matrix[0][0], 3, 4,
-					&speed_wheels[0]);
-			now_speead[0] = result_speed_1;
-			now_speead[1] = result_speed_2;
-			now_speead[2] = result_speed_3;
-			read_speed[0] = result_speed_0;
-			read_speed[1] = result_speed_1;
-			read_speed[2] = result_speed_2;
-			read_speed[3] = result_speed_3;
-			matrixMultiplyM2M(&read_speed[0], 1, 4,
-					&axes_robot_matrix_inverse[0][0], 4, 3, &robot_speed[0]);
+				} else
+					target_speed[2] = 0.0;
 
-			Wheel_1.target = speed_wheels[0];
-			Wheel_2.target = speed_wheels[1];
-			Wheel_3.target = speed_wheels[2];
-			Wheel_4.target = speed_wheels[3];
-			speed_U = robot_speed[0];
-			speed_V = robot_speed[1];
-			speed_W = robot_speed[2];
+				matrixMultiplyM2M(&target_speed[0], 1, 3, &robot_matrix[0][0],
+						3, 4, &speed_wheels[0]);
+				now_speead[0] = result_speed_1;
+				now_speead[1] = result_speed_2;
+				now_speead[2] = result_speed_3;
+				read_speed[0] = result_speed_0;
+				read_speed[1] = result_speed_1;
+				read_speed[2] = result_speed_2;
+				read_speed[3] = result_speed_3;
+				matrixMultiplyM2M(&read_speed[0], 1, 4,
+						&axes_robot_matrix_inverse[0][0], 4, 3,
+						&robot_speed[0]);
 
-		}
-		else{
-			flag_move_end = 1;
+				Wheel_1.target = speed_wheels[0];
+				Wheel_2.target = speed_wheels[1];
+				Wheel_3.target = speed_wheels[2];
+				Wheel_4.target = speed_wheels[3];
+				speed_U = robot_speed[0];
+				speed_V = robot_speed[1];
+				speed_W = robot_speed[2];
+
+			} else {
+				flag_move_end = 1;
 				speed_U = 0;
-		speed_V = 0;
-		speed_W = 0;
-		Wheel_1.target = 0;
-		Wheel_2.target = 0;
-		Wheel_3.target = 0;
-		Wheel_4.target = 0;
+				speed_V = 0;
+				speed_W = 0;
+				Wheel_1.target = 0;
+				Wheel_2.target = 0;
+				Wheel_3.target = 0;
+				Wheel_4.target = 0;
+			}
 		}
-	}
 
 	}
 
@@ -489,8 +485,6 @@ void convertData(char *data) {
 	}
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-
-
 
 	if (rx_data[0] == '%') {
 		check_sum = 0;
@@ -744,14 +738,14 @@ void set_voltage(uint8_t motor, float duty) {
 		}
 		break;
 	case 4:
-			 if(duty >= 0.0)  {
-				 TIM12->CCR1 = ((int32_t)(TIM12->ARR * duty));
-				 HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_RESET);
-		  }
-			 else {
-				 TIM12->CCR1 = ((int32_t)(TIM12->ARR + (TIM12->ARR * duty)));
-			 	 HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_SET);  }
+		if (duty >= 0.0) {
+			TIM12->CCR1 = ((int32_t) (TIM12->ARR * duty));
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_RESET);
+		} else {
+			TIM12->CCR1 = ((int32_t) (TIM12->ARR + (TIM12->ARR * duty)));
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_SET);
 		}
+	}
 
 }
 void PID_Controller(PID *reg) {
@@ -933,49 +927,46 @@ void matrixDet_LU_Transform(float *A, char n, float *out) //необходимо
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
+	/* USER CODE BEGIN 1 */
 	convert_typedef();
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_TIM4_Init();
-  MX_TIM3_Init();
-  MX_TIM1_Init();
-  MX_TIM2_Init();
-  MX_TIM8_Init();
-  MX_TIM7_Init();
-  MX_TIM6_Init();
-  MX_USART1_UART_Init();
-  MX_TIM10_Init();
-  MX_TIM11_Init();
-  MX_TIM9_Init();
-  MX_TIM12_Init();
-  MX_TIM5_Init();
-  /* USER CODE BEGIN 2 */
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_DMA_Init();
+	MX_TIM4_Init();
+	MX_TIM3_Init();
+	MX_TIM1_Init();
+	MX_TIM2_Init();
+	MX_TIM8_Init();
+	MX_TIM7_Init();
+	MX_TIM6_Init();
+	MX_USART1_UART_Init();
+	MX_TIM9_Init();
+	MX_TIM12_Init();
+	MX_TIM5_Init();
+	/* USER CODE BEGIN 2 */
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
@@ -1003,61 +994,58 @@ int main(void)
 
 /////////////////
 
-  /* USER CODE END 2 */
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
 	while (1) {
 
-//set_voltage(0,mot_1);
-//set_voltage(1,mot_2);
-//set_voltage(2,mot_3);
-//set_voltage(3,mot_4);
+		convert_chushpan();
+		control_mod();
 
+//		autonom_flag = 1;
+		switch (flag) {
+		case (0): {
+			servo_control(0, 0);
+			servo_control(0, 0);
 
-		autonom_flag = 1;
-	switch(flag){
-	case (0):{
-		servo_control(0,0);
-		servo_control(0,0);
-		void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-		{
-
+			if (autonom_flag) {
+				flag_compleate = 1;
+			}
+			break;
 		}
 
-		if (autonom_flag) {
-			flag_compleate = 1;
-		}
-		break;
-	}
-
-
-	case(1):
-		{
+		case (1): {
 
 			omron(1);
-			servo_control(1,1);
-			state_timer(20);
-						break;
+			servo_control(1, 1);
+			state_timer(2);
+			break;
 
-	}
-	case(2):{
-				Move_robot_coordinates_X_Y_W(0.2, 0.2, 1, 1, 0.0);
-				flag_compleate = 1;
-				break;
-	}
+		}
+		case (2): {
 
+			Move_robot_coordinates_X_Y_W(0.2, 0.2, 0, 0, 0.0);
 
+			flag_compleate = 1;
 
-	case(3):{
-				Move_robot_coordinates_X_Y_W(0.25, 0.7, 0.03, 2.1, 3.3);
-				flag_compleate = 1;
-				break;
-	}
+			break;
+		}
 
-
-	}
-	falg_controler();
+		case (3): {
+			Move_robot_coordinates_X_Y_W(0.25, 0.7, 0.25, 0.25, 1.57);
+			chain_control(1);
+			flag_compleate = 2;
+			break;
+		}
+		case (4): {
+			Move_robot_coordinates_X_Y_W(0.25, 0.7, 0.0, 0.0, 3.14);
+			chain_control(2);
+			flag_compleate = 2;
+			break;
+		}
+		}
+		falg_controler();
 
 //		void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //		{
@@ -1112,57 +1100,54 @@ int main(void)
 //		control_mod();
 	}
 
-    /* USER CODE END WHILE */
+	/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+	/* USER CODE BEGIN 3 */
 
-  /* USER CODE END 3 */
+	/* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void) {
+	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
 
-  /** Configure the main internal regulator output voltage
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+	/** Configure the main internal regulator output voltage
+	 */
+	__HAL_RCC_PWR_CLK_ENABLE();
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 168;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 7;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	/** Initializes the RCC Oscillators according to the specified parameters
+	 * in the RCC_OscInitTypeDef structure.
+	 */
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+	RCC_OscInitStruct.PLL.PLLM = 8;
+	RCC_OscInitStruct.PLL.PLLN = 168;
+	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+	RCC_OscInitStruct.PLL.PLLQ = 7;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+	/** Initializes the CPU, AHB and APB buses clocks
+	 */
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 /* USER CODE BEGIN 4 */
@@ -1170,18 +1155,17 @@ void SystemClock_Config(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
+	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 	__disable_irq();
 	while (1) {
 
 	}
-  /* USER CODE END Error_Handler_Debug */
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT

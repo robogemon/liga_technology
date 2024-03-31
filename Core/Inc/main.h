@@ -116,7 +116,7 @@ void matrixFill(float *m, char rows, char columns, float val);
 float matrixGetCell(float *m, char rows, char columns, char row, char column);
 void matrixMultiplyS2M(float *m, char rows, char columns, float s, float *new_m);
 void matrixPlusMinus(float *m1, float *m2, char rows, char columns, signed char sign,float *new_m);
-void matrixTranspose(float *m, char rows, char columns, float *new_m);
+ void matrixTranspose(float *m, char rows, char columns, float *new_m);
 void matrixCofactor(float *m, char size, float *new_m);
 void matrixInverse(float *m, char size, float *new_m);
 void matrixDet_LU_Transform(float *A, char n,float *out);
@@ -128,12 +128,15 @@ void matrixDet_LU_Transform(float *A, char n,float *out);
 /* USER CODE BEGIN EM */
 #define radius 0.03 //wheel
 #define pulse_enc 2236
+#define pulse_enc_omron 1025
 #define pi 3.1415926535897932
 #define pi_Radius 0.188495559215387592 //wheel
 #define pi_Radius_pulse_enc 0.00008430033954176547 //wheel
 #define radius_chain 0.052 //chain
 #define pi_Radius_chain 0.3267256359733384928 //chain
-#define pi_Radius_pulse_enc_chain 0.0001461205885390601488 //chain
+#define pi_Radius_pulse_enc_chain 0.0003187567180227692613 //chain
+#define traget_break  quest_UV[0][1] / gipotinus * V * (0.4 + (0.6 * gipotinus) / 0.25)
+#define target_acceleration  quest_UV[0][1] / gipotinus * V * (0.4 + (0.6 * (distante - gipotinus)) / 0.25)
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

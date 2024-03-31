@@ -96,8 +96,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(dig_pin5_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PDPin PDPin */
-  GPIO_InitStruct.Pin = omron_1_Pin|omron_2_Pin;
+  /*Configure GPIO pins : PDPin PDPin PD3 */
+  GPIO_InitStruct.Pin = omron_1_Pin|omron_2_Pin|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
